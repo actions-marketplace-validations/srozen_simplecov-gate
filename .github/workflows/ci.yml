@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  test:
+    name: simplecov ${{ matrix.simplecov }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1.x legs gate on coverage.json; the 0.x leg writes no
+        # coverage.json, so it proves the .last_run.json fallback.
+        simplecov: ["~> 0.22.0", "~> 1.0.0", "~> 1.1"]
+    env:
+      SIMPLECOV_VERSION: ${{ matrix.simplecov }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner image ships Ruby and RubyGems but no Bundler, so
+      # install the two dev gems directly.
+      - name: Install dependencies
+        run: sudo gem install minitest simplecov:"${SIMPLECOV_VERSION}"
+
+      - name: Run tests
+        run: ruby test/simplecov_gate_test.rb
+
+      - name: Gate coverage at 100%
+        uses: ./
+        with:
+          minimum-coverage: 100

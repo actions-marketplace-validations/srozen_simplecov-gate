@@ -1,0 +1,34 @@
+name: SimpleCov Gate
+description: Fail the build when SimpleCov total line coverage drops below a minimum threshold.
+author: Samuel Monroe
+
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  minimum-coverage:
+    description: Minimum required total line coverage, in percent (e.g. 90 or 99.5).
+    required: true
+  coverage-path:
+    description: Directory containing the SimpleCov report (coverage.json or .last_run.json).
+    required: false
+    default: coverage
+  github-token:
+    description: >
+      Token used to publish the verdict as a dedicated "SimpleCov Gate" check
+      run on the pull request (requires `checks: write` permission).
+      Set to an empty string to disable the check run.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check SimpleCov coverage
+      shell: bash
+      env:
+        SIMPLECOV_GATE_MINIMUM_COVERAGE: ${{ inputs.minimum-coverage }}
+        SIMPLECOV_GATE_COVERAGE_PATH: ${{ inputs.coverage-path }}
+        SIMPLECOV_GATE_GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: ruby "${GITHUB_ACTION_PATH}/bin/simplecov-gate"
